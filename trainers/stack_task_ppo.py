@@ -4,7 +4,7 @@ import time
 
 from matplotlib.pyplot import step
 from ray.tune.utils import merge_dicts
-
+import robosuite
 from robosuite.controllers import load_controller_config
 from robosuite.utils.input_utils import *
 from ray.rllib.utils.test_utils import check_learning_achieved
@@ -15,47 +15,68 @@ import os
 from robosuite.wrappers import GymWrapper
 import argparse
 import gym, ray
-
+import glob
 from ray.rllib.agents import ppo
 from ray.tune.registry import register_env, get_trainable_cls
+from robosuite.wrappers import DemoSamplerWrapper
+
+class CombinedEnv(gym.Env):
+
+    def __init__(self, render):
+        options = {}
+        options["env_name"] = "Stack"
+        options["robots"] = "Panda"
+        options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
+        env = suite.make(
+            **options,
+            reward_shaping=True,
+            has_renderer=render,
+            has_offscreen_renderer=False,
+            ignore_done=False,
+            use_camera_obs=False,
+            horizon=750,
+            control_freq=50,
+        )
+
+        self.demo_env = DemoSamplerWrapper(
+            env,
+            demo_path="panda",
+            need_xml=False,
+            num_traj=-1,
+            sampling_schemes=["uniform", "random"],
+            scheme_ratios=[0.9, 0.1],
+        )
+
+        self.gym_env = GymWrapper(env)
+        self.action_space = self.gym_env.action_space
+        self.observation_space = self.gym_env.observation_space
+        self.action_spec = self.gym_env.action_spec
+        self.action_dim = self.gym_env.action_dim
+
+    def step(self, action):
+        return self.gym_env.step(action)
+
+    def reset(self):
+        self.gym_env.reset()
+        return self.gym_env._flatten_obs(self.demo_env.reset())
+
+    def render(self, mode='human'):
+        self.gym_env.render()
 
 
 def eval_env_creator(env_config):
-    options = {}
-    options["env_name"] = "Stack"
-    options["robots"] = "Sawyer"
-    options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
-    env = GymWrapper(suite.make(
-        **options,
-        reward_shaping=True,
-        has_renderer=True,
-        has_offscreen_renderer=False,
-        ignore_done=False,
-        use_camera_obs=False,
-        horizon=600
-    ))
-    return env  # return an env instance
+    return CombinedEnv(True)
 
 
 def env_creator(env_config):
-    options = {}
-    options["env_name"] = "Stack"
-    options["robots"] = "Sawyer"
-    options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
-    env = GymWrapper(suite.make(
-        **options,
-        reward_shaping=True,
-        has_renderer=False,
-        has_offscreen_renderer=False,
-        ignore_done=False,
-        use_camera_obs=False,
-        horizon=750
-    ))
-    return env  # return an env instance
+   return CombinedEnv(False)
+
+
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("-a", "--name", type=str)
     parser.add_argument("-n", "--n_workers", type=int, default=16)
     parser.add_argument("-e", "--eval", action='store_true')
     parser.add_argument("-c", "--chk_num", type=int)
@@ -67,25 +88,28 @@ if __name__ == '__main__':
     config = ppo.DEFAULT_CONFIG
     # === Evaluation ===
     config["num_workers"] = args.n_workers
-    config["train_batch_size"] = 126976
-    config["sgd_minibatch_size"] = 4096
+    config["train_batch_size"] = 153760
+    config["sgd_minibatch_size"] = 4960
     # Coefficient of the entropy regularizer.
     # Decay schedule for the entropy regularizer.
     config["env"] = "stack_robot"
     config["framework"] = "torch"
     config["lambda"] = 0.95
     config["gamma"] = 0.998
-    config["entropy_coeff"] = 0.0001
+    config["entropy_coeff"] = 0.01
     config["vf_loss_coeff"] = 0.5
     config["clip_param"] = 0.2
-    # config["observation_filter"] = "MeanStdFilter"
-    config["num_gpus"] = 1
+    config["num_gpus"] = 0.5
     config["grad_clip"] = 0.5
     config["lr"] = .0003
 
-    config["model"] = { "fcnet_hiddens": [400, 300], "fcnet_activation": "tanh", "vf_share_layers": False, }
+    config["model"] = { "fcnet_hiddens": [400, 300], "fcnet_activation": "relu", "vf_share_layers": False}
 
-    checkpoint = f'/home/dewe/ray_results/PPO/PPO_stack_robot_d2597_00000_0_2020-12-03_16-09-24/checkpoint_{args.chk_num}/checkpoint-{args.chk_num}'
+    dir = f'/home/dewe/ray_results/{args.name}/*/'
+    dirs = glob.glob(dir)
+    checkpoint=None
+    if len(dirs):
+        checkpoint = f'{dirs[0]}checkpoint_{args.chk_num}/checkpoint-{args.chk_num}'
     if args.eval:
         # ray.init()
         config_dir = os.path.dirname(checkpoint)
@@ -110,26 +134,30 @@ if __name__ == '__main__':
         cls = get_trainable_cls('PPO')
         agent = cls(config=config)
         # Load state from checkpoint.
-        # agent.restore(checkpoint)
+        agent.restore(checkpoint)
 
-        print(agent.get_policy().model)
+        # print(agent.get_policy().action_space)
+        # print(agent.get_policy().model)
         # # run until episode ends
-        # episode_reward = 0
-        # done = False
-        # eval_env = eval_env_creator(None)
-        # obs = eval_env.reset()
-        # for i in range(5 * 500):
-        #     action = agent.compute_action(obs)
-        #     obs, reward, done, info = eval_env.step(action)
-        #     episode_reward += reward
-        #     eval_env.render()
-        #     if done:
-        #         obs = eval_env.reset()
+        episode_reward = 0
+        done = False
+        eval_env = eval_env_creator(None)
+        obs = eval_env.reset()
+        for i in range(5 * 500):
+            action = agent.compute_action(obs)
+            obs, reward, done, info = eval_env.step(action)
+            episode_reward += reward
+            eval_env.render()
+            if done:
+                obs = eval_env.reset()
 
     else:
         stop = {
-            "training_iteration": 200
+            "training_iteration": 1000
         }
 
-        tune.run("PPO", config=config, stop=stop, verbose=1, checkpoint_freq=5)
+        if checkpoint:
+            tune.run("PPO",config=config, stop=stop, verbose=1, checkpoint_freq=5, name=args.name, restore=checkpoint)
+        else:
+            tune.run("PPO", config=config, stop=stop, verbose=1, checkpoint_freq=5)
         ray.shutdown()

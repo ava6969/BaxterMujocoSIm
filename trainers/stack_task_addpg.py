@@ -22,16 +22,16 @@ def eval_env_creator(env_config):
     options = {}
     options["env_name"] = "Stack"
     options["robots"] = "UR5e"
-    options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
+    options["controller_configs"] = load_controller_config(default_controller="JOINT_TORQUE")
     env = GymWrapper(suite.make(
         **options,
-        horizon=750,
         reward_shaping=True,
         has_renderer=True,
         has_offscreen_renderer=False,
         ignore_done=False,
         use_camera_obs=False,
-        control_freq=20,
+        horizon=750,
+        control_freq = 20,
     ))
     return env  # return an env instance
 
@@ -39,17 +39,17 @@ def eval_env_creator(env_config):
 def env_creator(env_config):
     options = {}
     options["env_name"] = "Stack"
-    options["robots"] = "UR5e"
-    options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
+    options["robots"] = "Sawyer"
+    options["controller_configs"] = load_controller_config(default_controller="JOINT_TORQUE")
     env = GymWrapper(suite.make(
         **options,
         horizon=750,
+        control_freq = 20,
         reward_shaping=True,
         has_renderer=False,
         has_offscreen_renderer=False,
         ignore_done=False,
         use_camera_obs=False,
-        control_freq=20,
     ))
     return env  # return an env instance
 
@@ -60,7 +60,6 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--eval", action='store_true')
     parser.add_argument("-c", "--chk_num", type=int)
     args = parser.parse_args()
-    stop_reward = 350
     ray.init()
     register_env("stack_robot", env_creator)
     register_env("stack_robot_eval", eval_env_creator)
@@ -105,21 +104,16 @@ if __name__ == '__main__':
                 obs = eval_env.reset()
     else:
         config = ddpg.DEFAULT_CONFIG
-        config["buffer_size"] = 100000
-        config["num_gpus"] = 1
+        config["num_gpus"] = 0.5
         config["num_workers"] = args.n_workers
+        config["learning_starts"] =  10000
         config["evaluation_interval"] = 5
         config["evaluation_num_episodes"] = 10
         config["env"] = "stack_robot"
         config["framework"] ="torch"
-        config["actor_hidden_activation"] = "tanh"
-        config["target_network_update_freq"] = 1
-        config["train_batch_size"] = 128
-        config["buffer_size"] = 1000000
-        config["timesteps_per_iteration"] = 40
+
         stop = {
             "timesteps_total": 10000000,
-            "episode_reward_mean": stop_reward,
         }
 
         tune.run("DDPG", config=config, stop=stop, verbose=1, checkpoint_freq=10)
