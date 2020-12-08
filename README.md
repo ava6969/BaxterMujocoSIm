@@ -1,6 +1,7 @@
 # BaxterMujocoSIm
 
 To Install all libraries used
+
 pip install -r requirements.txt
 
 
