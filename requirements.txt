@@ -1,0 +1,217 @@
+absl-py @ file:///tmp/build/80754af9/absl-py_1603893133560/work
+actionlib==1.13.2
+aiohttp==3.7.3
+aiohttp-cors==0.7.0
+aioredis==1.3.1
+angles==1.9.13
+astor==0.8.1
+astunparse==1.6.3
+async-timeout==3.0.1
+atari-py==0.2.6
+attrs @ file:///tmp/build/80754af9/attrs_1604765588209/work
+beautifulsoup4==4.9.3
+blessings==1.7
+blinker==1.4
+bondpy==1.8.6
+brotlipy==0.7.0
+cached-property==1.5.2
+cachetools @ file:///tmp/build/80754af9/cachetools_1596822027882/work
+camera-calibration==1.15.2
+camera-calibration-parsers==1.12.0
+catkin==0.8.8
+certifi==2020.11.8
+cffi @ file:///tmp/build/80754af9/cffi_1606255099073/work
+chardet @ file:///tmp/build/80754af9/chardet_1605303159953/work
+click==7.1.2
+cloudpickle==1.6.0
+colorama==0.4.4
+colorful==0.5.4
+controller-manager==0.19.2
+controller-manager-msgs==0.19.2
+cryptography @ file:///tmp/build/80754af9/cryptography_1605544449973/work
+cv-bridge==1.15.0
+cycler==0.10.0
+Cython==0.29.21
+diagnostic-analysis==1.10.2
+diagnostic-common-diagnostics==1.10.2
+diagnostic-updater==1.10.2
+dm-tree==0.1.5
+dynamic-reconfigure==1.7.1
+fasteners==0.15
+filelock==3.0.12
+future==0.18.2
+gast==0.3.3
+gazebo-plugins==2.9.1
+gazebo-ros==2.9.1
+gencpp==0.6.5
+geneus==3.0.0
+genlisp==0.4.18
+genmsg==0.5.16
+gennodejs==2.0.2
+genpy==0.6.14
+glfw==2.0.0
+google==3.0.0
+google-api-core==1.23.0
+google-auth @ file:///tmp/build/80754af9/google-auth_1604100403705/work
+google-auth-oauthlib @ file:///tmp/build/80754af9/google-auth-oauthlib_1603929124518/work
+google-pasta==0.2.0
+googleapis-common-protos==1.52.0
+gpustat==0.6.0
+grpcio==1.32.0
+gym==0.17.3
+h5py @ file:///tmp/build/80754af9/h5py_1593454119955/work
+hid==1.0.4
+hiredis==1.1.0
+idna @ file:///tmp/build/80754af9/idna_1593446292537/work
+image-geometry==1.15.0
+imageio==2.9.0
+imageio-ffmpeg==0.4.2
+importlib-metadata @ file:///tmp/build/80754af9/importlib-metadata_1602276842396/work
+interactive-markers==1.12.0
+joblib==0.17.0
+joint-state-publisher==1.15.0
+joint-state-publisher-gui==1.15.0
+jsonschema==3.2.0
+Keras-Applications==1.0.8
+Keras-Preprocessing==1.1.2
+kiwisolver==1.2.0
+laser-geometry==1.6.5
+llvmlite==0.34.0
+lz4==3.1.1
+Markdown @ file:///tmp/build/80754af9/markdown_1605111062842/work
+matplotlib==3.3.2
+message-filters==1.15.8
+mkl-fft==1.2.0
+mkl-random==1.1.1
+mkl-service==2.3.0
+monotonic==1.5
+mpi4py==3.0.3
+msgpack==1.0.0
+mujoco-py==2.0.2.9
+multidict==5.0.2
+numba==0.51.2
+numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1603479632437/work
+nvidia-ml-py3==7.352.0
+oauthlib==3.1.0
+opencensus==0.7.11
+opencensus-context==0.1.2
+opencv-python==4.4.0.44
+opencv-python-headless==4.3.0.36
+opt-einsum==3.3.0
+pandas==1.1.3
+Pillow==7.2.0
+prometheus-client==0.9.0
+protobuf==3.13.0
+psutil==5.7.2
+py-spy==0.3.3
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pybullet==2.6.9
+pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+pygame==2.0.0
+pyglet==1.5.0
+PyJWT==1.7.1
+pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1606517880428/work
+pyparsing==2.4.7
+pyrsistent==0.17.3
+PySocks @ file:///tmp/build/80754af9/pysocks_1594394576006/work
+python-dateutil==2.8.1
+python-qt-binding==0.4.3
+pytz==2020.1
+PyYAML==5.3.1
+qt-dotgraph==0.4.2
+qt-gui==0.4.2
+qt-gui-cpp==0.4.2
+qt-gui-py-common==0.4.2
+ray==1.0.1.post1
+redis==3.4.1
+requests @ file:///tmp/build/80754af9/requests_1606691187061/work
+requests-oauthlib==1.3.0
+resource-retriever==1.12.6
+robosuite==1.0.1
+rosbag==1.15.8
+rosboost-cfg==1.15.6
+rosclean==1.15.6
+roscreate==1.15.6
+rosgraph==1.15.8
+roslaunch==1.15.8
+roslib==1.15.6
+roslint==0.12.0
+roslz4==1.15.8
+rosmake==1.15.6
+rosmaster==1.15.8
+rosmsg==1.15.8
+rosnode==1.15.8
+rosparam==1.15.8
+rospy==1.15.8
+rosservice==1.15.8
+rostest==1.15.8
+rostopic==1.15.8
+rosunit==1.15.6
+roswtf==1.15.8
+rqt-action==0.4.9
+rqt-bag==0.4.15
+rqt-bag-plugins==0.4.15
+rqt-console==0.4.11
+rqt-dep==0.4.10
+rqt-graph==0.4.14
+rqt-gui==0.5.2
+rqt-gui-py==0.5.2
+rqt-image-view==0.4.16
+rqt-launch==0.4.8
+rqt-logger-level==0.4.11
+rqt-moveit==0.5.9
+rqt-msg==0.4.9
+rqt-nav-view==0.5.7
+rqt-plot==0.4.12
+rqt-pose-view==0.5.10
+rqt-publisher==0.4.9
+rqt-py-common==0.5.2
+rqt-py-console==0.4.9
+rqt-reconfigure==0.5.3
+rqt-robot-dashboard==0.5.8
+rqt-robot-monitor==0.5.13
+rqt-robot-steering==0.5.11
+rqt-runtime-monitor==0.5.8
+rqt-rviz==0.6.1
+rqt-service-caller==0.4.9
+rqt-shell==0.4.10
+rqt-srv==0.4.8
+rqt-tf-tree==0.6.1
+rqt-top==0.4.9
+rqt-topic==0.4.12
+rqt-web==0.4.9
+rsa @ file:///tmp/build/80754af9/rsa_1596998415516/work
+rviz==1.14.1
+scipy @ file:///tmp/build/80754af9/scipy_1597686620742/work
+sensor-msgs==1.13.0
+six @ file:///tmp/build/80754af9/six_1605205313296/work
+smach==2.5.0
+smach-ros==2.5.0
+smclib==1.8.6
+soupsieve==2.0.1
+stable-baselines==2.10.1
+stable-baselines3 @ git+https://github.com/DLR-RM/stable-baselines3@b4188795f5b8918e96db5b8b8dfb867ed8e38d37
+tabulate==0.8.7
+tensorboard @ file:///home/builder/ktietz/conda/conda-bld/tensorboard_1604313476433/work/tmp_pip_dir
+tensorboard-plugin-wit==1.7.0
+tensorboardX==2.1
+tensorflow==2.2.0
+tensorflow-estimator==2.2.0
+tensorflow-gpu==1.15.0
+termcolor==1.1.0
+tf==1.13.2
+tf-conversions==1.13.2
+tf2-geometry-msgs==0.7.5
+tf2-kdl==0.7.5
+tf2-py==0.7.5
+tf2-ros==0.7.5
+topic-tools==1.15.8
+torch==1.6.0
+typing-extensions==3.7.4.3
+urllib3 @ file:///tmp/build/80754af9/urllib3_1603305693037/work
+Werkzeug==1.0.1
+wrapt==1.12.1
+xacro==1.14.4
+yarl @ file:///tmp/build/80754af9/yarl_1606939952652/work
+zipp @ file:///tmp/build/80754af9/zipp_1604001098328/work

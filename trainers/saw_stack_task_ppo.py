@@ -1,3 +1,7 @@
+import copy
+import json
+import time
+
 import imageio
 from matplotlib.pyplot import step
 from ray.tune.utils import merge_dicts
@@ -7,24 +11,54 @@ from robosuite.utils.input_utils import *
 from ray.rllib.utils.test_utils import check_learning_achieved
 import ray
 from ray import tune, cloudpickle
-import gym
+from gym.wrappers import Monitor
 import os
 from robosuite.wrappers import GymWrapper
 import argparse
 import gym, ray
 import glob
-from ray.rllib.agents import ddpg
+from ray.rllib.agents import ppo
 from ray.tune.registry import register_env, get_trainable_cls
 from robosuite.wrappers import DemoSamplerWrapper
+from stable_baselines3.common.vec_env import VecVideoRecorder, DummyVecEnv
 
+def eval_env_creator(env_config):
+    return CombinedEnv(True)
+
+def env_creator(env_config):
+   return CombinedEnv(False)
+
+
+def record_video(agent, video_length=500, prefix='', video_folder='videos/'):
+  """
+  :param env_id: (str)
+  :param model: (RL model)
+  :param video_length: (int)
+  :param prefix: (str)
+  :param video_folder: (str)
+  """
+
+  done = False
+  eval_env = DummyVecEnv([lambda: env_creator({}) ])
+  eval_env = VecVideoRecorder(eval_env, video_folder=video_folder,
+                              record_video_trigger=lambda step: step == 0, video_length=video_length,
+                              name_prefix=prefix)
+
+  obs = eval_env.reset()
+
+  for i in range(video_length):
+      action = agent.compute_action(obs.squeeze(0))
+      action = np.expand_dims(action, 0)
+      obs, _, _, _ = eval_env.step(action)
+
+  eval_env.close()
 
 
 class CombinedEnv(gym.Env):
-
     def __init__(self, render, ):
         options = {}
         options["env_name"] = "Stack"
-        options["robots"] = "Panda"
+        options["robots"] = "Sawyer"
         options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
         env = suite.make(
             **options,
@@ -37,14 +71,6 @@ class CombinedEnv(gym.Env):
             control_freq=25,
         )
 
-        self.demo_env = DemoSamplerWrapper(
-            env,
-            demo_path="/home/dewe/trainers/panda",
-            need_xml=False,
-            num_traj=-1,
-            sampling_schemes=["uniform", "random"],
-            scheme_ratios=[0.9, 0.1],
-        )
         self.eval = render
         self.gym_env = GymWrapper(env)
         self.action_space = self.gym_env.action_space
@@ -58,18 +84,12 @@ class CombinedEnv(gym.Env):
     def reset(self):
         # if self.eval:
         #     return self.gym_env.reset()
-        self.gym_env.reset()
-        return self.gym_env._flatten_obs(self.demo_env.reset())
+        return self.gym_env.reset()
 
     def render(self, mode='human'):
         self.gym_env.render()
 
-def eval_env_creator(env_config):
-    return CombinedEnv(True)
 
-
-def env_creator(env_config):
-   return CombinedEnv(False)
 
 
 if __name__ == '__main__':
@@ -78,7 +98,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--n_workers", type=int, default=16)
     parser.add_argument("-e", "--eval", action='store_true')
     parser.add_argument("-c", "--chk_num", type=int)
-    parser.add_argument("--skip_frame", type=int, default=1)
+    parser.add_argument("--skip_frame", type=int, default=0)
     parser.add_argument("--video_path", type=str, default="video.mp4")
     parser.add_argument("-r", "--record", action='store_true')
     parser.add_argument("--camera", type=str, default="agentview", help="Name of camera to render")
@@ -89,18 +109,25 @@ if __name__ == '__main__':
     register_env("stack_robot_eval", eval_env_creator)
     ray.init()
 
-
-    config = ddpg.DEFAULT_CONFIG
-    config["num_gpus"] = 0.5
+    config = ppo.DEFAULT_CONFIG
+    # === Evaluation ===
     config["num_workers"] = args.n_workers
-    config["evaluation_interval"] = 5
-    config["evaluation_num_episodes"] = 10
+    config["train_batch_size"] = 153760
+    config["sgd_minibatch_size"] = 4960
+    # Coefficient of the entropy regularizer.
+    # Decay schedule for the entropy regularizer.
     config["env"] = "stack_robot"
     config["framework"] = "torch"
+    config["lambda"] = 0.95
+    config["gamma"] = 0.998
+    config["entropy_coeff"] = 0.01
+    config["vf_loss_coeff"] = 0.5
+    config["clip_param"] = 0.2
+    config["num_gpus"] = 0.5
+    config["grad_clip"] = 0.5
+    config["lr"] = .0003
 
-
-    config["model"] = { "fcnet_hiddens": [400, 300], "fcnet_activation": "tanh", "vf_share_layers": False}
-
+    config["model"] = { "fcnet_hiddens": [400, 300], "fcnet_activation": "relu", "vf_share_layers": False}
 
     dir = f'/home/dewe/ray_results/{args.name}/*/'
     dirs = glob.glob(dir)
@@ -128,7 +155,7 @@ if __name__ == '__main__':
         config["create_env_on_driver"] = False
 
         # Create the Trainer from config.
-        cls = get_trainable_cls('DDPG')
+        cls = get_trainable_cls('PPO')
         agent = cls(config=config)
         # Load state from checkpoint.
         agent.restore(checkpoint)
@@ -140,35 +167,7 @@ if __name__ == '__main__':
         done = False
 
         if args.record:
-            options = {}
-            options["env_name"] = "Stack"
-            options["robots"] = "Sawyer"
-            options["controller_configs"] = load_controller_config(default_controller="JOINT_VELOCITY")
-            env = suite.make(
-                **options,
-                ignore_done=False,
-                use_camera_obs=True,
-                use_object_obs=True,
-                camera_names=args.camera,
-                camera_heights=args.height,
-                camera_widths=args.width,
-            )
-            env = GymWrapper(env)
-            writer = imageio.get_writer(args.video_path, fps=20)
-            frames = []
-            obs = env.reset()
-
-            for i in range(5 * 500):
-                action = agent.compute_action(obs)
-                obs, reward, done, info = env.step(action)
-                # dump a frame from every K frames
-                if i % args.skip_frame == 0:
-                    frame = env.ob_dict[args.camera + "_image"][::-1]
-                    writer.append_data(frame)
-                    print("Saving frame #{}".format(i))
-                if done:
-                    obs = env.reset()
-            writer.close()
+            record_video(agent)
         else:
             eval_env = eval_env_creator(None)
             # create a video writer with imageio
@@ -187,8 +186,13 @@ if __name__ == '__main__':
         }
 
         if checkpoint:
-            tune.run("DDPG",config=config, stop=stop, verbose=1, checkpoint_freq=5, name=args.name, restore=checkpoint)
+            analysis = tune.run("PPO",config=config, stop=stop, verbose=1, checkpoint_freq=5, name=args.name, restore=checkpoint)
 
         else:
-            tune.run("DDPG", config=config, stop=stop, verbose=1, checkpoint_freq=5, name=args.name)
+            analysis = tune.run("PPO", config=config, stop=stop, verbose=1, checkpoint_freq=5, name=args.name)
+
+        checkpoints = analysis.get_trial_checkpoints_paths(
+            trial=analysis.get_best_trial("episode_reward_mean"),
+            metric="episode_reward_mean")
+        print(checkpoints)
         ray.shutdown()
